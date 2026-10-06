@@ -1,0 +1,16 @@
+Vocab Diet: Reshaping the Vocabulary of LLMs via Vector Arithmetic
+Copyright (c) 2026 Yuval Reif, Guy Kaplan, and Roy Schwartz
+
+The authors' code is licensed under the Apache License, Version 2.0.
+
+This distribution includes code derived from modded-nanoGPT:
+Copyright (c) 2024 Keller Jordan
+The upstream MIT license is retained in licenses/modded-nanoGPT-MIT.txt.
+
+This distribution includes Apple Cut Cross-Entropy code:
+Copyright (C) 2024 Apple Inc. All Rights Reserved.
+Its separate license and acknowledgements are retained in
+pretraining/cut_cross_entropy/LICENSE and
+pretraining/cut_cross_entropy/ACKNOWLEDGEMENTS.md.
+
+See THIRD_PARTY_NOTICES.md for component and resource details.

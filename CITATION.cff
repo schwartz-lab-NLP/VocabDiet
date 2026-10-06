@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: "If you use Vocab Diet, please cite the paper below."
+title: "Vocab Diet"
+type: software
+version: 0.1.0
+authors:
+  - family-names: Reif
+    given-names: Yuval
+  - family-names: Kaplan
+    given-names: Guy
+  - family-names: Schwartz
+    given-names: Roy
+preferred-citation:
+  type: conference-paper
+  title: "Vocab Diet: Reshaping the Vocabulary of LLMs via Vector Arithmetic"
+  authors:
+    - family-names: Reif
+      given-names: Yuval
+    - family-names: Kaplan
+      given-names: Guy
+    - family-names: Schwartz
+      given-names: Roy
+  collection-title: "Findings of the Association for Computational Linguistics: ACL 2026"
+  year: 2026
+  month: 7
+  start: 32334
+  end: 32352
+  doi: "10.18653/v1/2026.findings-acl.1618"
+  url: "https://aclanthology.org/2026.findings-acl.1618/"
+

@@ -1,0 +1,25 @@
+name: checks
+on: [push, pull_request]
+jobs:
+  cpu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install CPU dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libenchant-2-2 hunspell-en-us
+          python -m pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -e '.[posthoc,pretraining,analysis,dev]'
+      - name: Check public sources
+        run: python scripts/check_release.py
+      - name: Check undefined names and syntax
+        run: ruff check .
+      - name: Run component tests
+        env:
+          HF_HUB_OFFLINE: '1'
+          WANDB_MODE: disabled
+        run: python -m pytest -q
