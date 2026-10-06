@@ -1,30 +1,21 @@
 # Compositional vocabulary pretraining
 
-This directory contains the recovered baseline and compositional training paths for
-the English GPT-2 and Spanish 32k pretraining experiments described in the
-paper. The paper states that both models train on FineWeb/FineWeb-2 for about
-1B tokens, that English uses the GPT-2 vocabulary with OOV compositions
-disabled, and that Spanish uses a 32k BPE vocabulary with OOV compositions
-enabled. It does not give a complete command line or the full optimizer and
-batch configuration.
+Train baseline and compositional language models with the English GPT-2 vocabulary or a Spanish 32k BPE vocabulary. The commands below cover tokenizer construction, preprocessing, training, and checkpoint loading. See the [method guide](../docs/method.md) for the model formulation and the [reproduction guide](../docs/reproduction.md) for experimental settings and reproducibility notes.
 
 ## Data and runtime requirements
 
 From the repository root, run `uv sync --locked --all-extras --python 3.12`,
 then `cd pretraining`. Use a PyTorch build matching the available CUDA GPUs
 for training. W&B logging is disabled by default; enable it with
-`--wandb_project YOUR_PROJECT` and optionally `--wandb_entity YOUR_ENTITY`. Command-line help and module imports do not initialize CUDA.
+`--wandb_project YOUR_PROJECT` and optionally `--wandb_entity YOUR_ENTITY`.
 
 The tokenizer builder needs UniMorph inflection TSV data for English and
 Spanish. Set `UNIMORPH_ROOT` to the parent directory containing `eng/eng` and
 `spa/spa` (a `.tsv` suffix is also accepted). If unset, the code looks in
-`resources/unimorph/` at the repository root. No UniMorph data is bundled here;
-obtain it from the [UniMorph project](https://unimorph.github.io/) and retain
+`resources/unimorph/` at the repository root. Obtain it from the [UniMorph project](https://unimorph.github.io/) and retain
 its data attribution and terms when redistributing it. English morphology
 also uses `en_core_web_sm`, the NLTK WordNet corpus, PyEnchant, and an `en_US`
-system dictionary. Missing resources produce an actionable error when the
-English morphology code first needs them.
-
+system dictionary.
 Example setup:
 
 ```bash
@@ -52,10 +43,6 @@ python train_bpe_tokenizer.py \
 
 This writes the tokenizer under
 `tokenizers/fineweb-2__spa_Latn__bpe32000__base_gpt2__stream__10Bbytes`.
-The older `EXPERIMENT_COMMANDS.md` leaves `--vocab_size` commented out in its
-10B-token example; that would use GPT-2's 50,257-entry size, not the paper's
-32k vocabulary. It also uses `--max_tokens` in that example, while the paper
-specifies 10B **bytes**.
 
 Tokenize baseline data with the same FineWeb split and the matching tokenizer:
 
@@ -70,17 +57,14 @@ python tokenize_dataset.py \
 
 ## Compositional tokenization flags
 
-The paper's English condition is IV-only: use `--skip_multi_token_words` in
-both preprocessing and training. The Spanish condition allows OOV compositions:
-leave that flag off in both commands. In the current single-ID implementation,
-both languages also need `--skip_multi_token_bases`; it avoids unsupported
+For English, restrict surface forms to the original vocabulary with `--skip_multi_token_words` in
+both preprocessing and training. For Spanish, allow out-of-vocabulary compositions:
+leave that flag off in both commands. Both languages also need `--skip_multi_token_bases`; it avoids unsupported
 multi-token bases while still allowing Spanish multi-token surface forms.
 Repeat the same flags and `--language` value for tokenization and training so
 both commands load the same tokenizer bundle and dataset directory.
-The paper's transformation head conditions on the selected base's output
-unembedding vector; this is the default in the publication path. Pass
-`--transformation_base_rep_source unembedding` explicitly if you want the
-command itself to record that choice.
+
+Transformation heads condition on the selected base's unembedding vector. The commands below set this with `--transformation_base_rep_source unembedding`.
 
 English compositional data and model:
 
@@ -114,10 +98,7 @@ torchrun --standalone --nproc_per_node=4 train_compositional.py \
   --num_iterations 5000
 ```
 
-These are example commands for a roughly 1B-token budget. With sequence length
-49,152, four workers and 5,000 iterations consume 983,040,000 training tokens.
-Exact final architecture, optimizer settings and invocation records must be
-recovered before claiming a numerical reproduction of the published BPB.
+With 49,152 tokens per rank per step, four ranks, and 5,000 iterations, these example commands process 983,040,000 training tokens (with gradient accumulation set to one).
 
 Tokenized binary files are written under `data/<dataset>_<config>/<tokenizer>/`
 for baseline runs and `data/vocab_diet/<dataset>_<config>/<bundle-cache-key>/`
@@ -139,20 +120,9 @@ python tokenize_dataset.py --help
 python tokenize_compositional_dataset.py --help
 ```
 
-## Cut cross entropy provenance
+## Cut cross entropy
 
-`cut_cross_entropy/` is vendored from Apple's `apple/ml-cross-entropy` project,
-The release retains the standard loss kernels used by factorized pretraining.
-The retained upstream implementation identifies itself as version `25.7.2`;
-the original vendored commit was not recorded, so this should not be presented
-as a pinned upstream revision. Keep Apple's `LICENSE` and
-`ACKNOWLEDGEMENTS.md` with the source. Apple's license grants use and
-redistribution subject to its terms and disclaimers; it is not the repository's
-Apache 2.0 license. The upstream project's current [license](https://github.com/apple/ml-cross-entropy/blob/main/LICENSE)
-and [acknowledgements](https://github.com/apple/ml-cross-entropy/blob/main/ACKNOWLEDGEMENTS.md)
-document the provenance and third-party notices. The removed `default/`,
-`logit_scaling/`, `softcap_d/`, and Transformers integration subpackages were
-not imported by the retained baseline or compositional training paths.
+`cut_cross_entropy/` is vendored from [apple/ml-cross-entropy](https://github.com/apple/ml-cross-entropy). Its [license](cut_cross_entropy/LICENSE) and [acknowledgements](cut_cross_entropy/ACKNOWLEDGEMENTS.md) are kept in that folder; see [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
 
 ## Native checkpoints
 
@@ -175,8 +145,4 @@ model = restore_model(checkpoint, device="cuda")
 
 Native inference takes extended token IDs, optional targets for teacher-forced
 likelihood, and a sliding-window size in 128-token blocks. Use the matching
-exported tokenizer. Training and native attention require CUDA; CPU tests cover
-the component calculations and checkpoint metadata. The default
-English architecture has 152,764,417 parameters, whereas the paper specifies
-124M. See [architecture provenance](../docs/reproduction.md) before choosing a
-configuration for a numerical reproduction.
+exported tokenizer. Training and native attention require CUDA.

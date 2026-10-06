@@ -1,27 +1,29 @@
-# Reproduction status
+# Reproduction guide
 
-The [published paper](https://aclanthology.org/2026.findings-acl.1618/) and final manuscript define the experiment matrix. The workflow guides describe the released implementation and supported command-line arguments.
+Use the workflow guides to run the experiments. The [paper](https://aclanthology.org/2026.findings-acl.1618/) defines the experimental comparisons; the settings below summarize the camera-ready version.
 
-| Experiment | Paper setup | Artifact availability |
+## Experiments
+
+| Experiment | Setup | Guide |
 | --- | --- | --- |
-| English representation probes | Llama-3-8B, Qwen2.5-7B, OLMo-2-7B; input composition and first ten layers; IV/OOV | Probe implementation included; complete original model-specific outputs are not bundled |
-| Multilingual probes | ALLaM-7B (Arabic), EuroLLM-9B (German, Russian, Spanish) | Implementation included; obtain language-specific UniMorph resources |
-| English post-hoc adaptation | Llama-3.1-8B, Qwen2.5-7B, OLMo-2-7B | Adaptation and downstream evaluation implementation included; checkpoints are external |
-| Multilingual post-hoc adaptation | ALLaM-7B and EuroLLM-9B | Adaptation and evaluation implementation included; checkpoints are external |
-| Pretraining | Baseline/compositional 124M models; English GPT-2 vocabulary, Spanish 32k BPE; about 1B tokens | Training implementation included; original final invocation records and checkpoints have not been recovered |
-| Reallocation | Llama-3.1-8B; 10k freed slots and 2.5k new tokens per target language | Release implementation builds one shared multilingual tokenizer with disjoint language budgets; exact report underlying the published table has not been recovered |
+| English representation probes | Llama-3.1-8B, Qwen2.5-7B, and OLMo-2-7B; embedding layer and layers 1–10; in-vocabulary and out-of-vocabulary words | [Patchscopes](../posthoc/README.md#inspect-composed-input-representations) |
+| Multilingual probes | ALLaM-7B for Arabic; EuroLLM-9B for German, Russian, and Spanish | [Patchscopes](../posthoc/README.md#inspect-composed-input-representations) |
+| English post-hoc adaptation | Llama-3.1-8B, Qwen2.5-7B, and OLMo-2-7B | [Adaptation](../posthoc/README.md#adapt-an-english-model) |
+| Multilingual post-hoc adaptation | ALLaM-7B for Arabic; EuroLLM-9B for German, Russian, and Spanish | [Adaptation](../posthoc/README.md#adapt-a-multilingual-model) |
+| Pretraining | Baseline and compositional nanoGPT-124M models; GPT-2 vocabulary for English, 32k BPE for Spanish; about 1B training tokens per model | [Pretraining](../pretraining/README.md) |
+| Vocabulary reallocation | Llama-3.1-8B tokenizer; 10,000 freed English slots, with 2,500 new tokens each for Arabic, Russian, German, and Spanish | [Reallocation](../analysis/README.md#joint-vocabulary-reallocation-analysis) |
 
-## Paper hyperparameters
+## Experimental settings
 
-Post-hoc adaptation uses sequence length 256, 20k examples for one epoch, learning rate `5e-5`, warmup ratio `0.03`, and zero weight decay. Input and output transformation initialization uses single-transformation IV pairs. The main downstream setup applies detokenization filtering and excludes derivations. LoRA applies to the last eight blocks with `r = alpha = 256`.
+Post-hoc adaptation trains on 20,000 FineWeb-Edu examples for one epoch, with sequence length 256, learning rate `5e-5`, warmup ratio `0.03`, and zero weight decay. Transformation vectors are initialized from in-vocabulary pairs with one transformation. The downstream setup filters failed detokenization and excludes derivations. LoRA applies to the last eight blocks with `r = alpha = 256`.
 
-English downstream benchmarks are MMLU, ARC, HellaSwag, Winogrande, TriviaQA, SQuAD, BoolQ, PIQA, and COPA. Multilingual benchmarks are XNLI, XQuAD, and Global MMLU. The paper uses five-shot evaluation and at most 5,000 examples per task.
+English downstream benchmarks are MMLU, ARC, HellaSwag, Winogrande, TriviaQA, SQuAD, BoolQ, PIQA, and COPA. Multilingual benchmarks are XNLI, XQuAD, and Global MMLU. The camera-ready appendix specifies five in-context examples per task and up to 5,000 evaluation examples per dataset.
 
-Pretraining runs use four L40S GPUs. The example 5,000-step configuration with 49,152 tokens per rank consumes **983,040,000** training tokens. It is not an archived final run specification. In particular, verify the exact Spanish tokenizer, base-conditioned head settings, architecture, and validation text against the original training run before claiming a numerical reproduction.
+Pretraining uses FineWeb for English and FineWeb-2 for Spanish. English restricts compositions to the original GPT-2 vocabulary. Spanish uses a 32k BPE vocabulary trained on 10B bytes of Spanish FineWeb-2 and permits out-of-vocabulary compositions.
 
 ## Reported values
 
-These are transcribed from the final manuscript; they are not outputs of the release tests.
+The tables below report the paper's baseline and compositional pretraining results and its tokenizer reallocation results. Lower bits per byte (BPB) is better; higher bytes per token indicates more efficient tokenization.
 
 | Language | Vocabulary reduction | Baseline BPB | Compositional BPB | Baseline bytes/token | Compositional bytes/token |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -36,28 +38,16 @@ These are transcribed from the final manuscript; they are not outputs of the rel
 | Spanish | 3.80 | 4.07 |
 | Macro average | 4.40 | 4.81 |
 
+## Reproducibility notes
+
+The repository includes experiment code but not the paper's trained checkpoints, raw results, exact pretraining and reallocation run configurations, or original benchmark sample indices. Fresh runs may differ from the reported values.
+
+The paper specifies nanoGPT-124M, while the default English configuration here has 152,764,417 parameters.
+
+The exemplar-count correlation helper provides exploratory summaries of supplied probe outputs. Reproducing the paper's Spearman values requires the same transformation selection and aggregation. Offset-geometry and vocabulary-scaling results also require raw measurements beyond the supplied workflows.
+
+CPU tests check component behavior; they do not reproduce the paper's GPU training or benchmark scores.
+
 ## Recording new runs
 
-Keep the command, serialized arguments, random seed, dependency versions, model revision, morphology-resource revisions, tokenizer files, and the held-out document selection with each run. Keep raw output outside the source tree. CPU tests validate local components; GPU training and downstream performance remain separate validation steps.
-
-## Architecture provenance
-
-The manuscript calls the pretraining models `nanoGPT-124M`. The recovered
-trainer defaults (12 blocks, hidden size 768, six attention heads, two KV heads,
-gated intermediate size 2,048, untied embeddings) have **152,764,417** parameters
-with the padded English vocabulary. These defaults are not established as the
-published architecture. The implementation logs actual parameter counts and
-saves constructor metadata. Obtain the final run configuration before selecting
-architecture settings or presenting a new run as a reproduction of the 124M
-experiments.
-
-The publication code corrects padded-vocabulary scoring, tokenizer-specific EOS
-boundaries, export attention/cache handling, and UTF-8 byte accounting. These
-fixes change behavior relative to the recovered development files; historical
-scores must be verified against the archived run rather than assumed unchanged.
-
-Benchmark sampling in this release enforces a total 5,000-example cap across
-MMLU subjects and records selected indices. Adaptation recomputes benchmark
-scores on each invocation so a new training run cannot reuse stale scores
-from the same output directory. The selected indices and full GPU scores
-still need comparison with the original run artifacts.
+Save the command, arguments, seed, dependency versions, model and morphology-resource revisions, tokenizer files, and held-out document selection with each run. The evaluator writes its selected benchmark indices to `evaluation_samples.json`. Keep raw results outside the source tree.
