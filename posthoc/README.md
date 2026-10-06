@@ -25,16 +25,14 @@ model first. The second stage freezes those input offsets and trains output
 offsets together with LoRA adapters in the final eight blocks (`r = alpha = 256`).
 Both stages use the same fixed sample. `--no-lora_ft` runs the transformation-only
 condition. Batch size and accumulation above are example memory settings;
-complete original invocation records are not bundled.
+adjust them for your GPU memory.
 
 The paper also uses `Qwen/Qwen2.5-7B` and `allenai/OLMo-2-1124-7B` for English
 adaptation. Use `--model_name` to choose the model. Benchmark defaults are the
 full English tasks, five shots, and at most 5,000 examples per evaluator task.
 For grouped benchmarks such as MMLU, the 5,000-example budget is shared across
 subjects in proportion to their sizes, with at least one example per subject.
-Selection uses seed 42 and is saved in `evaluation_samples.json`. The archived
-sample indices are unavailable, so this implements the stated budget without
-claiming the original exact sample selection. No tiny benchmark substitutes are used.
+Selection uses seed 42 and is saved in `evaluation_samples.json`.
 
 ## Adapt a multilingual model
 
@@ -61,12 +59,11 @@ unavailable language/task combinations; available tasks use five shots.
 
 ## Inspect composed input representations
 
-The English Patchscopes experiments include derivations. This example uses the
-paper's Llama-3-8B input probe model:
+To probe English representations, include derivations and inspect layers zero through ten. For Llama-3.1-8B:
 
 ```bash
 python -m posthoc.patchscopes \
-  --model_name meta-llama/Meta-Llama-3-8B \
+  --model_name meta-llama/Llama-3.1-8B \
   --unimorph_root "$UNIMORPH_ROOT" \
   --include_derivations --last_analysis_layer 10 \
   --output_dir outputs/patchscopes
@@ -114,5 +111,4 @@ loader does not restore the additive vocabulary mappings.
 
 `--help` lists workflow options. Standard Hugging Face Trainer arguments are
 accepted by the adaptation entry point; unknown arguments are rejected.
-The [reproduction guide](../docs/reproduction.md) distinguishes tested code
-contracts from full GPU runs and archived numerical results.
+See the [reproduction guide](../docs/reproduction.md) for experimental settings and reproducibility notes.

@@ -67,13 +67,23 @@ The tests run without downloading model weights. Full training and evaluation re
 
 ```bibtex
 @inproceedings{reif-etal-2026-vocab,
-  title = {Vocab Diet: Reshaping the Vocabulary of {LLM}s via Vector Arithmetic},
-  author = {Reif, Yuval and Kaplan, Guy and Schwartz, Roy},
-  booktitle = {Findings of the Association for Computational Linguistics: ACL 2026},
-  year = {2026},
-  pages = {32334--32352},
-  doi = {10.18653/v1/2026.findings-acl.1618},
-  url = {https://aclanthology.org/2026.findings-acl.1618/}
+    title = "Vocab Diet: Reshaping the Vocabulary of {LLM}s via Vector Arithmetic",
+    author = "Reif, Yuval  and
+      Kaplan, Guy  and
+      Schwartz, Roy",
+    editor = "Liakata, Maria  and
+      Moreira, Viviane P.  and
+      Zhang, Jiajun  and
+      Jurgens, David",
+    booktitle = "Findings of the {A}ssociation for {C}omputational {L}inguistics: {ACL} 2026",
+    month = jul,
+    year = "2026",
+    address = "San Diego, California, United States",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2026.findings-acl.1618/",
+    doi = "10.18653/v1/2026.findings-acl.1618",
+    pages = "32334--32352",
+    ISBN = "979-8-89176-395-1"
 }
 ```
 

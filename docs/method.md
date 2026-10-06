@@ -30,7 +30,7 @@ Pretraining uses additive inputs and a factorized output:
 p(w | history) = p(b(w) | history) * product(p(t_g | b(w), history) for g in groups)
 ```
 
-Each group includes a null choice. Transformation heads receive the hidden state and a representation of the selected base. Training uses the gold base; inference selects the base before selecting transformation values. The final paper specifies the base's **unembedding** vector for conditioning. Summed joint negative log-likelihood, including all transformation groups, is used for bits-per-byte evaluation.
+Each group includes a null choice. Transformation heads receive the hidden state and the selected base's unembedding vector. Training uses the gold base; inference selects the base before selecting transformation values. Summed joint negative log-likelihood, including all transformation groups, is used for bits-per-byte evaluation.
 
 English starts from GPT-2's vocabulary and restricts surface output to the original vocabulary. Spanish starts from a 32k BPE vocabulary trained on 10B bytes of Spanish FineWeb-2 and permits out-of-vocabulary compositions. Both use whitespace-prefix transformations.
 
